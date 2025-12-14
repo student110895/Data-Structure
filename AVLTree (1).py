@@ -33,6 +33,22 @@ class AVLNode(object):
 	def is_real_node(self):
 		return False
 
+	def get_height(self, another_node: AVLNode | None) -> int:
+		if another_node is None:
+			return -1
+		return another_node.height
+
+	def update_height(self):
+		sons: list[AVLNode|None] = [self.left, self.right]
+		max_son_height = max([self.get_height(node) for node in sons])
+		self.height = max_son_height + 1
+  
+	def get_balance(self):
+		sons: list[AVLNode] = [self.left, self.right]
+		left_son_height = self.left.height if self.left is not None else -1
+		right_son_height = self.right.height if self.right is not None else -1
+		return self.get_height(self.left) - self.get_height(self.right)
+
 
 """
 A class implementing an AVL tree.
@@ -45,6 +61,8 @@ class AVLTree(object):
 	"""
 	def __init__(self):
 		self.root = None
+		self.height: int = -1
+		self.size: int = 0
 
 
 	"""searches for a node in the dictionary corresponding to the key (starting at the root)
@@ -111,6 +129,42 @@ class AVLTree(object):
 	def delete(self, node):
 		return	
 
+	def rotate_right(self, root: AVLNode) -> AVLNode:
+		"""
+		make the left child of the root (subtree or whole tree) the new root
+		"""
+		new_root = root.left
+		former_root = root
+		sub_tree_to_move = new_root.right
+
+        # ביצוע הסיבוב
+		new_root.right = former_root
+		former_root.left = sub_tree_to_move
+
+        # עדכון גבהים
+		former_root.update_height(former_root)
+		new_root.update_height(new_root)
+		return new_root
+
+
+	def rotate_left(self, root: AVLNode) -> AVLNode:
+		"""
+		make the left child of the root (subtree or whole tree) the new root
+		"""
+		new_root = root.right
+		former_root = root
+		sub_tree_to_move = new_root.left
+
+        # ביצוע הסיבוב
+		new_root.left = former_root
+		former_root.right = sub_tree_to_move
+
+        # עדכון גבהים
+		former_root.update_height(former_root)
+		new_root.update_height(new_root)
+		return new_root
+
+# need to add rebalance
 	
 	"""joins self with item and another AVLTree
 
@@ -124,6 +178,7 @@ class AVLTree(object):
 	or the opposite way
 	"""
 	def join(self, tree2, key, val):
+		if tree2.root is None:
 		return
 
 
