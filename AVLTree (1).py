@@ -31,20 +31,25 @@ class AVLNode(object):
 	@returns: False if self is a virtual node, True otherwise.
 	"""
 	def is_real_node(self):
-		return False
+		if self.height == -1:
+			return False
+		else:
+			return True
+    
+    
 
-	def get_height(self, another_node: AVLNode | None) -> int:
-		if another_node is None:
+	def get_height(self, another_node) -> int:
+		if not another_node.is_real_node():
 			return -1
 		return another_node.height
 
 	def update_height(self):
-		sons: list[AVLNode|None] = [self.left, self.right]
+		sons = [self.left, self.right]
 		max_son_height = max([self.get_height(node) for node in sons])
 		self.height = max_son_height + 1
   
 	def get_balance(self):
-		sons: list[AVLNode] = [self.left, self.right]
+		sons = [self.left, self.right]
 		left_son_height = self.left.height if self.left is not None else -1
 		right_son_height = self.right.height if self.right is not None else -1
 		return self.get_height(self.left) - self.get_height(self.right)
@@ -74,6 +79,17 @@ class AVLTree(object):
 	and e is the number of edges on the path between the starting node and ending node+1.
 	"""
 	def search(self, key):
+		count = 0
+		curr = self.root
+		while curr.height > -1:
+			if curr.key == key:
+				return curr, count
+			elif curr.key > key: #go left
+				curr = curr.left
+				count += 1
+			elif curr.key < key: #go right
+				curr = curr.right
+				count += 1
 		return None, -1
 
 
@@ -87,8 +103,7 @@ class AVLTree(object):
 	"""
 	def finger_search(self, key):
 		return None, -1
-
-
+	
 	"""inserts a new node into the dictionary with corresponding key and value (starting at the root)
 
 	@type key: int
@@ -179,7 +194,7 @@ class AVLTree(object):
 	"""
 	def join(self, tree2, key, val):
 		if tree2.root is None:
-		return
+			return 
 
 
 	"""splits the dictionary at a given node
@@ -229,3 +244,73 @@ class AVLTree(object):
 	"""
 	def get_root(self):
 		return None
+
+
+def print_avl_labeled(node, prefix="", is_left=None, label="root"):
+    if node is None:
+        connector = "├── " if is_left else "└── "
+        print(prefix + connector + f"{label}: ∅")
+        return
+
+    if is_left is None:  # root
+        print(f"{label}: {node.key} (h={node.height})")
+    else:
+        connector = "├── " if is_left else "└── "
+        print(prefix + connector + f"{label}: {node.key} (h={node.height})")
+
+    new_prefix = prefix + ("│   " if is_left else "    ")
+
+    print_avl_labeled(node.left, new_prefix, True, "L")
+    print_avl_labeled(node.right, new_prefix, False, "R")
+
+
+
+
+# ----- TEMP MANUAL TREE (FOR PRINTING ONLY) -----
+
+tree = AVLTree()
+
+root = AVLNode(10, "root")
+left = AVLNode(5, "left")
+right = AVLNode(15, "right")
+n2 = AVLNode(2, "n2")
+n7 = AVLNode(7, "n7")
+n12 = AVLNode(12, "n12")
+n18 = AVLNode(18, "n18")
+
+# set heights so they are considered "real"
+root.height = 1
+left.height = 0
+right.height = 0
+n2.height = 0
+n7.height = 0
+n12.height = 0
+n18.height = 0
+left.left = n2
+left.right = n7
+right.left = n12
+right.right = n18
+
+n2.parent = left
+n7.parent = left
+n12.parent = right
+n18.parent = right
+
+
+# connect pointers
+root.left = left
+root.right = right
+left.parent = root
+right.parent = root
+
+tree.root = root
+
+print_avl_labeled(tree.root)
+
+
+def test_search(tree, key):
+	return tree.search(key)
+
+result = test_search(tree, 5)
+print(result)
+
