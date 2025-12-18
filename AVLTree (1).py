@@ -179,6 +179,29 @@ class AVLTree(object):
 	"""
 	def join(self, tree2, key, val):
 		if tree2.root is None:
+			return
+		if self.root is None:
+			self = tree2
+		smaller_tree: AVLTree
+		bigger_tree: AVLTree
+		smaller_tree, bigger_tree = self, tree2 if tree2.root > self.root else tree2, self
+		new_size: int = smaller_tree.size + bigger_tree.size
+		new_height: int = 1 + max(smaller_tree.height, bigger_tree.height)
+   
+		if abs(self.height - tree2.height) < 1:
+			new_root: AVLNode = AVLNode(key, val)
+			new_root.left = smaller_tree.root
+			new_root.right = bigger_tree.root
+			new_root.height = new_height
+			
+			# check if more fields are needed to be updated  
+			self.root = new_root
+			
+
+		elif smaller_tree.height - bigger_tree.height < -1:
+		
+			self.size = new_size
+		self.height = new_height
 		return
 
 
