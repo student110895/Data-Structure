@@ -143,7 +143,7 @@ class AVLTree(object):
 
         # עדכון גבהים
 		former_root.update_height(former_root)
-		new_root.update_height(new_root)
+		former_root.update_height(new_root)
 		return new_root
 
 
