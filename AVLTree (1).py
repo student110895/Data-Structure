@@ -1,3 +1,4 @@
+
 #id1:
 #name1:
 #username1:
@@ -38,10 +39,10 @@ class AVLNode(object):
     
     
 
-	def get_height(self, another_node) -> int:
-		if not another_node.is_real_node():
+	def get_height(self) -> int:
+		if not self.is_real_node():
 			return -1
-		return another_node.height
+		return self.height
 
 	def update_height(self):
 		sons = [self.left, self.right]
@@ -49,9 +50,6 @@ class AVLNode(object):
 		self.height = max_son_height + 1
   
 	def get_balance(self):
-		sons = [self.left, self.right]
-		left_son_height = self.left.height if self.left is not None else -1
-		right_son_height = self.right.height if self.right is not None else -1
 		return self.get_height(self.left) - self.get_height(self.right)
 
 
@@ -65,10 +63,16 @@ class AVLTree(object):
 	Constructor, you are allowed to add more fields.
 	"""
 	def __init__(self):
-		self.root = None
+		self.fake_node = AVLNode(None, None)
+		self.root = self.fake_node
 		self.height: int = -1
 		self.size: int = 0
+		self.max_node = self.fake_node
+	
 
+	def update_tree_height(self):
+		self.height = self.root.get_height() + 1
+		
 
 	"""searches for a node in the dictionary corresponding to the key (starting at the root)
         
@@ -93,6 +97,7 @@ class AVLTree(object):
 		return None, -1
 
 
+	
 	"""searches for a node in the dictionary corresponding to the key, starting at the max
         
 	@type key: int
@@ -144,42 +149,107 @@ class AVLTree(object):
 	def delete(self, node):
 		return	
 
-	def rotate_right(self, root: AVLNode) -> AVLNode:
+	def rotate_directly_right(self, root: AVLNode) -> AVLNode:
 		"""
-		make the left child of the root (subtree or whole tree) the new root
+		make the left child of root the new root
 		"""
-		new_root = root.left
 		former_root = root
+		new_root = former_root.left
+		former_root_parent = former_root.parent
 		sub_tree_to_move = new_root.right
-
-        # ביצוע הסיבוב
+  
+		# make the changes
+		former_root.parent = new_root
 		new_root.right = former_root
 		former_root.left = sub_tree_to_move
-
-        # עדכון גבהים
-		former_root.update_height(former_root)
-		former_root.update_height(new_root)
+		new_root.parent = former_root_parent
+		
+		former_root.update_height()
+		new_root.update_height()
 		return new_root
 
 
-	def rotate_left(self, root: AVLNode) -> AVLNode:
+	def rotate_directly_left(self, root: AVLNode) -> AVLNode:
 		"""
-		make the left child of the root (subtree or whole tree) the new root
+		make the right child of root the new root
 		"""
-		new_root = root.right
 		former_root = root
+		new_root = former_root.right
+		former_root_parent = former_root.parent
 		sub_tree_to_move = new_root.left
-
-        # ביצוע הסיבוב
+  
+		# make the changes
+		former_root.parent = new_root
 		new_root.left = former_root
 		former_root.right = sub_tree_to_move
-
-        # עדכון גבהים
-		former_root.update_height(former_root)
-		new_root.update_height(new_root)
+		new_root.parent = former_root_parent
+  
+		former_root.update_height()
+		new_root.update_height()
 		return new_root
 
-# need to add rebalance
+ 
+	def rotate_fully_right(self, root: AVLNode) -> AVLNode:
+		"""
+		make the right subtree higher by 1 and left lower by 1
+		"""
+		left_son = root.left
+		if left_son.get_balance() < 0:
+			self.rotate_directly_left(left_son)
+		return self.rotate_directly_right(root)
+
+
+	def rotate_fully_left(self, root: AVLNode) -> AVLNode:
+		"""
+		make the left subtree higher by 1 and right lower by 1
+		"""
+		right_son = root.right
+		if right_son.get_balance() > 0:
+			self.rotate_directly_right(right_son)
+		return self.rotate_directly_left(root)
+
+
+	def search_left_by_height(self, height: int) -> AVLNode:
+		"""
+		return the left most node with hight or hight -1
+		"""
+		current_node = self.root
+		while current_node.height > height:
+			current_node = current_node.left
+		return current_node
+
+
+	def search_right_by_height(self, height: int) -> AVLNode:
+		"""
+		return the right most node with hight or hight -1
+		"""
+		current_node = self.root
+		while current_node.height > height:
+			current_node = current_node.right
+		return current_node
+
+
+	def change_tree(self, another_tree) -> None:
+		""" 
+		change current tree to another tree
+		"""
+		self.root = another_tree.root
+		self.height = another_tree.height
+		self.size = another_tree.size
+		return
+
+
+	def rebalance_tree(self, start_node: AVLNode) -> None:
+		"""go through all parents, balance and update heights"""
+		current_node = start_node
+		while current_node.is_real_node():
+			current_node.update_height()
+			while current_node.get_balance() < -1:
+				current_node = self.rotate_fully_left(current_node)
+			while current_node.get_balance() > 1:
+				current_node = self.rotate_fully_right(current_node)
+			current_node = current_node.parent
+		
 	
 	"""joins self with item and another AVLTree
 
@@ -193,32 +263,44 @@ class AVLTree(object):
 	or the opposite way
 	"""
 	def join(self, tree2, key, val):
-		if tree2.root is None:
+     
+    # in case one tree is empty
+		if not tree2.root.is_real_node():
+			self.insert(key, val)
 			return
-		if self.root is None:
-			self = tree2
-		smaller_tree: AVLTree
-		bigger_tree: AVLTree
-		smaller_tree, bigger_tree = self, tree2 if tree2.root > self.root else tree2, self
-		new_size: int = smaller_tree.size + bigger_tree.size
-		new_height: int = 1 + max(smaller_tree.height, bigger_tree.height)
-   
-		if abs(self.height - tree2.height) < 1:
-			new_root: AVLNode = AVLNode(key, val)
-			new_root.left = smaller_tree.root
-			new_root.right = bigger_tree.root
-			new_root.height = new_height
-			
-			# check if more fields are needed to be updated  
-			self.root = new_root
-			
+		elif not self.root.is_real_node():
+			self.change_tree(tree2)
+			self.insert(key, val)
+			return
 
-		elif smaller_tree.height - bigger_tree.height < -1:
-		
-			self.size = new_size
-		self.height = new_height
+		#compare keys
+		smaller_tree, bigger_tree = self, tree2 if tree2.root > self.root else tree2, self
+		#compare height
+		shorter_tree, higer_tree = self, tree2 if tree2.height > self.heightt else tree2, self
+		connector = AVLNode(key, val)
+  
+		if shorter_tree == smaller_tree:
+			higher_tree_same_level_node = higer_tree.search_left_by_height()
+			parent = higher_tree_same_level_node.parent
+			parent.left = connector
+			connector.parent = parent
+			connector.right = higher_tree_same_level_node
+			connector.left = shorter_tree.root
+		else:
+			higher_tree_same_level_node = higer_tree.search_right_by_height()
+			parent = higher_tree_same_level_node.parent
+			parent.right = connector
+			connector.parent = parent
+			connector.left = higher_tree_same_level_node
+			connector.right = shorter_tree.root
+		self.rebalance_tree(connector)
+
+		new_size: int = smaller_tree.size + bigger_tree.size
+		self.size = new_size
+		self.height = self.update_tree_height
+
 		return
-			return 
+
 
 
 	"""splits the dictionary at a given node
@@ -250,7 +332,7 @@ class AVLTree(object):
 	@returns: the maximal node, None if the dictionary is empty
 	"""
 	def max_node(self):
-		return None
+		return self.max_node
 
 	"""returns the number of items in dictionary 
 
@@ -258,7 +340,7 @@ class AVLTree(object):
 	@returns: the number of items in dictionary 
 	"""
 	def size(self):
-		return -1	
+		return self.size	
 
 
 	"""returns the root of the tree representing the dictionary
@@ -267,7 +349,7 @@ class AVLTree(object):
 	@returns: the root, None if the dictionary is empty
 	"""
 	def get_root(self):
-		return None
+		return self.root
 
 
 def print_avl_labeled(node, prefix="", is_left=None, label="root"):
