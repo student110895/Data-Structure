@@ -277,9 +277,14 @@ class AVLTree(object):
 		smaller_tree, bigger_tree = self, tree2 if tree2.root > self.root else tree2, self
 		#compare height
 		shorter_tree, higer_tree = self, tree2 if tree2.height > self.heightt else tree2, self
+  
+		#original might be shorter, so original will be added to tree2 and then changed into tree 2
+		change_needed_after_joining = higer_tree == tree2
+  
 		connector = AVLNode(key, val)
   
 		if shorter_tree == smaller_tree:
+		# add the keys left to the higher_tree
 			higher_tree_same_level_node = higer_tree.search_left_by_height()
 			parent = higher_tree_same_level_node.parent
 			parent.left = connector
@@ -287,12 +292,17 @@ class AVLTree(object):
 			connector.right = higher_tree_same_level_node
 			connector.left = shorter_tree.root
 		else:
+		# add the keys right to the higher_tree
 			higher_tree_same_level_node = higer_tree.search_right_by_height()
 			parent = higher_tree_same_level_node.parent
 			parent.right = connector
 			connector.parent = parent
 			connector.left = higher_tree_same_level_node
 			connector.right = shorter_tree.root
+
+		if change_needed_after_joining:
+			self.change_tree(tree2)
+		
 		self.rebalance_tree(connector)
 
 		new_size: int = smaller_tree.size + bigger_tree.size
