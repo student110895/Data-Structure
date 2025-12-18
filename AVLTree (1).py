@@ -49,9 +49,6 @@ class AVLNode(object):
 		self.height = max_son_height + 1
   
 	def get_balance(self):
-		sons = [self.left, self.right]
-		left_son_height = self.left.height if self.left is not None else -1
-		right_son_height = self.right.height if self.right is not None else -1
 		return self.get_height(self.left) - self.get_height(self.right)
 
 
@@ -218,7 +215,7 @@ class AVLTree(object):
 			self.size = new_size
 		self.height = new_height
 		return
-			return 
+
 
 
 	"""splits the dictionary at a given node
