@@ -1,4 +1,3 @@
-
 #id1:
 #name1:
 #username1:
@@ -307,10 +306,19 @@ class AVLTree(object):
 
 		new_size: int = smaller_tree.size + bigger_tree.size
 		self.size = new_size
+		self.max_node = max(self.max_node.key, tree2.max_node.key)
 		self.height = self.update_tree_height
 
 		return
 
+
+	def make_tree_from_node(self, node: AVLNode):
+    # size and max is not updated
+		tree = AVLTree()
+		tree.root = node
+		self.height = node.height
+		return tree
+    
 
 
 	"""splits the dictionary at a given node
@@ -324,7 +332,17 @@ class AVLTree(object):
 	dictionary larger than node.key.
 	"""
 	def split(self, node):
-		return None, None
+		pass
+		#t1 = self.make_tree_from_node(node.left)
+		#t2 = self.make_tree_from_node(node.right)
+		 # 
+		#current_node = node
+		#while current_node.is_real_node():
+		#	current_node_is_left_child = current_node.parent.left == current_node
+		#	if current_node_is_left_child:
+				
+
+		#return None, None
 
 	
 	"""returns an array representing dictionary 
