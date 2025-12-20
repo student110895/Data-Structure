@@ -313,7 +313,7 @@ class AVLTree(object):
 
 
 	def make_tree_from_node(self, node: AVLNode):
-    # size and max is not updated
+    # note size and max is not updated
 		tree = AVLTree()
 		tree.root = node
 		self.height = node.height
@@ -332,17 +332,20 @@ class AVLTree(object):
 	dictionary larger than node.key.
 	"""
 	def split(self, node):
-		pass
-		#t1 = self.make_tree_from_node(node.left)
-		#t2 = self.make_tree_from_node(node.right)
-		 # 
-		#current_node = node
-		#while current_node.is_real_node():
-		#	current_node_is_left_child = current_node.parent.left == current_node
-		#	if current_node_is_left_child:
-				
-
-		#return None, None
+		t1 = self.make_tree_from_node(node.left) #smaller than node
+		t2 = self.make_tree_from_node(node.right) #bigger than node
+		 
+		current_node = node
+		while current_node.parent.is_real_node():
+			current_node_is_left_child = current_node.parent.left == current_node
+			if current_node_is_left_child:
+				current_sibling = self.make_tree_from_node(current_node.parent.right)
+				t2.join(current_sibling, current_node.parent.key, current_node.parent.val) 
+			else:
+				current_sibling = self.make_tree_from_node(current_node.parent.left)
+				t1.join(current_sibling, current_node.parent.key, current_node.parent.val)
+			current_node = current_node.parent
+		return t1, t2
 
 	
 	"""returns an array representing dictionary 
@@ -351,7 +354,17 @@ class AVLTree(object):
 	@returns: a sorted list according to key of touples (key, value) representing the data structure
 	"""
 	def avl_to_array(self):
-		return None
+		nodes_array = []
+		#using rec in-order walk
+		def rec_in_order_walk(node: AVLNode, nodes_array: list) -> None:
+			
+			if node.is_real_node():
+				rec_in_order_walk(node.left)
+				nodes_array.append(node.key, node.value)
+				rec_in_order_walk(node.right)
+	
+		rec_in_order_walk(self.root, nodes_array)
+		return nodes_array
 
 
 	"""returns the node with the maximal key in the dictionary
