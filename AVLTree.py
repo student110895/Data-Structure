@@ -490,7 +490,10 @@ class AVLTree(object):
         higher_tree.rebalance_tree(connector)
 
         self._size = smaller_tree._size + bigger_tree._size + 1
-        self.max_node = max(smaller_tree.max_node.key, bigger_tree.max_node.key, connector.key)
+        trees = [smaller_tree, bigger_tree]
+        keys = [tree.max_node.key for tree in trees if tree.max_node.is_real_node()]
+        keys.append(connector.key)
+        self.max_node = max(keys)
         self.height = self.update_tree_height()
         return
 
@@ -515,9 +518,11 @@ class AVLTree(object):
     dictionary larger than node.key.
     """
     def split(self, node):
+        if node is None or not node.is_real_node():
+            return AVLTree() , self
         t1 = self.make_tree_from_node(node.left) #smaller than node
         t2 = self.make_tree_from_node(node.right) #bigger than node
-         
+        
         current_node = node
         while current_node.parent.is_real_node():
             current_node_is_left_child = current_node.parent.left == current_node
@@ -574,3 +579,4 @@ class AVLTree(object):
     """
     def get_root(self):
         return self.root
+
