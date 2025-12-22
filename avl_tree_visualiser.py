@@ -36,6 +36,61 @@ def print_tree_vertical(tree: AVLTree):
         print("<empty AVL>")
         return
     _print_subtree_vertical(tree.root)
+    
+    
+def print_pyramid(tree):
+    """
+    מדפיסה את העץ בצורה סימטרית דמוית פירמידה.
+    מתאים לעצים קטנים עד בינוניים (עד גובה 4-5).
+    """
+    root = tree.get_root()
+    if not root.is_real_node():
+        print("Empty Tree")
+        return
+
+    height = root.height
+    width = pow(2, height + 1) * 4  # חישוב רוחב השורה התחתונה
+    
+    current_level = [root]
+    for i in range(height + 1):
+        # חישוב רווח בין צמתים ברמה הנוכחית
+        span = width // pow(2, i)
+        line = ""
+        next_level = []
+        
+        for node in current_level:
+            if node.is_real_node():
+                val = str(node.key)
+                next_level.append(node.left)
+                next_level.append(node.right)
+            else:
+                val = " "
+                next_level.append(tree.fake_node)
+                next_level.append(tree.fake_node)
+            
+            # מרכוז הערך בתוך המרווח המוקצב לו
+            line += val.center(span)
+            
+        print(line)
+        
+        # הדפסת קווים מקשרים (אופציונלי - עוזר לויזואליות)
+        if i < height:
+            connections = ""
+            for j in range(len(current_level)):
+                conn_span = span
+                if current_level[j].is_real_node():
+                    # יצירת מבנה של / \
+                    left_c = "/" if current_level[j].left.is_real_node() else " "
+                    right_c = "\\" if current_level[j].right.is_real_node() else " "
+                    connections += (left_c + " " + right_c).center(conn_span)
+                else:
+                    connections += " ".center(conn_span)
+            print(connections)
+            
+        current_level = next_level
+
+# שימוש לדוגמה:
+# print_pyramid(t_left)
 
 
 # =========================================================
