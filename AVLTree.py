@@ -54,16 +54,25 @@ A class implementing an AVL tree.
 """
 
 class AVLTree(object):
+    
+    
+    # ---------- GLOBAL (shared) sentinel ----------
+    _GLOBAL_FAKE = AVLNode(None, None)
+    _GLOBAL_FAKE.left = _GLOBAL_FAKE
+    _GLOBAL_FAKE.right = _GLOBAL_FAKE
+    _GLOBAL_FAKE.parent = _GLOBAL_FAKE
+    _GLOBAL_FAKE.height = -1
+    # --------------------------------------------
 
     """
     Constructor, you are allowed to add more fields.
     """
     def __init__(self):
-        self.fake_node = AVLNode(None, None)
-        self.fake_node.left = self.fake_node
-        self.fake_node.right = self.fake_node
-        self.fake_node.parent = self.fake_node
-        self.fake_node.height = -1
+        self.fake_node = AVLTree._GLOBAL_FAKE
+        self.root = self.fake_node
+        self.height = -1
+        self._size = 0
+        self._max_node = None
 
         self.root = self.fake_node
         self.height = -1
@@ -73,8 +82,8 @@ class AVLTree(object):
     def _new_real_node(self, key, val, parent):
         """ Creates a node instantly considered as real with height 0"""
         n = AVLNode(key,val)
-        n.left = self.fake_node
-        n.right = self.fake_node
+        n.left = AVLTree._GLOBAL_FAKE
+        n.right = AVLTree._GLOBAL_FAKE
         n.parent = parent
         n.height = 0
         return n
@@ -150,17 +159,19 @@ class AVLTree(object):
     and h is the number of PROMOTE cases during the AVL rebalancing
     """
     def insert(self, key, val):
+        #case 1: empty tree
         if not self.root.is_real_node():
             new_node = self._new_real_node(key, val, self.fake_node)
-            self.root = new_node
-            self._max_node = new_node
+            self.root = self._max_node = new_node
             self._size = 1
             self.height = 0
-            return self.root, 0, 0
+            return new_node, 0, 0
         
+        #case 2: normal BST insert
+        curr = self.root 
         path = 0    #edges walked from root to insertion point (before rebalancing)
         promote = 0  #counts number of PROMOTE (height-increase) events during rebalancing
-        curr = self.root #start at root
+        
         while True:
              
             if key < curr.key: #go left
@@ -172,7 +183,8 @@ class AVLTree(object):
                     curr.left = new_node
                     path += 1
                     break   
-            if key > curr.key: #go right
+                
+            elif key > curr.key: #go right
                 if curr.right.is_real_node():
                     curr = curr.right
                     path += 1
@@ -184,6 +196,7 @@ class AVLTree(object):
         
         #rebalance tree in place and counts number of PROMOTE 
         promote += self.rebalance_after_insert(new_node) 
+        
         self._size += 1
         if self._max_node is None or key > self._max_node.key:
             self._max_node = new_node
@@ -266,9 +279,6 @@ class AVLTree(object):
             self._max_node = None
             self.height = -1
             self._size = 0
-            
-            self.fake_node.left = self.fake_node
-            self.fake_node.right = self.fake_node
             return
                 
         new_max_node = False #check if new max is required
@@ -431,7 +441,6 @@ class AVLTree(object):
         self.root = another_tree.root
         self.height = another_tree.height
         self._size = another_tree._size
-        self.fake_node = another_tree.fake_node
         self._max_node = another_tree._max_node
         return
    
@@ -578,7 +587,7 @@ class AVLTree(object):
     def make_tree_from_node(self, node: AVLNode):
     # note size and max node are not updated
         tree = AVLTree()
-        if not node.is_real_node or node is None:
+        if node is None or(not node.is_real_node()):
             return tree
         
         tree.root = node

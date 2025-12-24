@@ -1,6 +1,8 @@
 import random
 from AVLTree import AVLTree
 
+TRIALS = 20
+
 def get_swapped_array(n):
     arr = list(range(1, n + 1))
     for i in range(n - 1):
@@ -18,7 +20,21 @@ def run_experiment(arr):
         balance_sum += p_cost
     return search_sum, balance_sum
 
+def avg_random(n, kind):
+    s_total, b_total = 0, 0
+    for _ in range(TRIALS):
+        if kind == "Random":
+            arr = random.sample(range(1, n+1), n)
+        else:
+            arr = get_swapped_array(n)
+        s, b = run_experiment(arr)
+        s_total += s
+        b_total += b
+    return s_total / TRIALS, b_total / TRIALS
+
+
 def main():
+    
     print(f"{'i':<3} | {'n':<7} | {'Type':<10} | {'Search':<10} | {'Balance':<10}")
     print("-" * 55)
 
