@@ -151,42 +151,44 @@ class AVLTree(object):
     """
     def insert(self, key, val):
         if not self.root.is_real_node():
-            self.root = self._new_real_node(key, val, self.fake_node)
-            self._max_node = self.root
+            new_node = self._new_real_node(key, val, self.fake_node)
+            self.root = new_node
+            self._max_node = new_node
             self._size = 1
             self.height = 0
             return self.root, 0, 0
-        path = 0     #edges walked from root to insertion point (before rebalancing)
+        
+        path = 0    #edges walked from root to insertion point (before rebalancing)
         promote = 0  #counts number of PROMOTE (height-increase) events during rebalancing
         curr = self.root #start at root
-        while True: 
+        while True:
+             
             if key < curr.key: #go left
                 if curr.left.is_real_node():
                     curr = curr.left
                     path += 1
                 else:
-                    curr.left = self._new_real_node(key, val, curr)
-                    curr = curr.left
-                    break
-                
-            else: #key > curr.key
+                    new_node = self._new_real_node(key, val, curr)
+                    curr.left = new_node
+                    path += 1
+                    break   
+            if key > curr.key: #go right
                 if curr.right.is_real_node():
                     curr = curr.right
                     path += 1
                 else:
-                    curr.right = self._new_real_node(key, val, curr)
-                    curr = curr.right
+                    new_node = self._new_real_node(key, val, curr)
+                    curr.right = new_node
+                    path += 1
                     break
-                    
-    
-    
+        
         #rebalance tree in place and counts number of PROMOTE 
-        promote += self.rebalance_tree(curr) 
+        promote += self.rebalance_after_insert(new_node) 
         self._size += 1
         if self._max_node is None or key > self._max_node.key:
-            self._max_node = curr
+            self._max_node = new_node
         self.height = self.root.height
-        return curr, path, promote
+        return new_node, path, promote
 
 
 
@@ -206,35 +208,38 @@ class AVLTree(object):
         if not self.root.is_real_node(): #if tree is empty
             self.insert(key, val)
             return self.root, 0, 0
-        edges = 0
+        edges = 0 #count upwards movements
         curr = self._max_node
+            
         #climb up until key belongs in curr's right subtree
         while key < curr.key and curr.parent.is_real_node():
             curr = curr.parent
             edges += 1
    
-        promote = 0
-        path = 0    
+        promote = 0 
+        path = 0  #count downwards movements
         #normal BST descent from curr
-        while curr.height > 0: #while not leaf
-            if key < curr.key:
-                curr = curr.left
-            else: 
-                curr = curr.right
+        while curr.is_real_node(): #while not leaf
             path += 1
-    
-        #curr is leaf, attach new node as a child
-        if key < curr.key:
-            curr.left  = self._new_real_node(key, val, curr)
-            curr = curr.left
-        else: 
-            curr.right = self._new_real_node(key, val, curr)
-            curr = curr.right
-   
-   
+            if key < curr.key: #go left
+                if curr.left.is_real_node(): #if exists left son, descend
+                    curr = curr.left
+                else:#no left son, insert here
+                    new_node = self._new_real_node(key, val, curr)
+                    curr.left = new_node 
+                    break
+            elif key > curr.key: #go right
+                if curr.right.is_real_node(): #if exists right son, descend
+                    curr = curr.right
+                else:
+                    new_node = self._new_real_node(key, val, curr) #no right son, insert here
+                    curr.right = new_node
+                    break
+            
+            
         #rebalance tree in place and adds promote to count
-        promote += self.rebalance_tree(curr) 
-        return curr, path + edges, promote 
+        promote += self.rebalance_after_insert(new_node) 
+        return new_node, path + edges, promote 
 
 
     def find_max_node(self) -> AVLNode | None:
@@ -429,30 +434,72 @@ class AVLTree(object):
         self.fake_node = another_tree.fake_node
         self._max_node = another_tree._max_node
         return
+   
+   
+    def stop_rabalance(self, old_height: int, current_node: AVLNode, did_rotation: int) -> bool:
+        #stop if height stayed, but the node is not a leaf (as we saw in class)
+        # and change wasn't because of rotation
+        # also stop if root
+        height_same = current_node.height == old_height 
+        not_leaf = current_node.height > 0
+        is_root = current_node == self.root
+        return is_root or (height_same and not_leaf and not did_rotation)
+   
 
+    def rebalance_after_insert(self, start_node: AVLNode) -> int:
+        #start at inserted node
+        #count promotions
+        promote = 0
+        current_node = start_node 
+
+        while current_node.is_real_node():
+            old_height = current_node.height             
+            current_node.update_height() 
+            after_update_height = current_node.height
+            
+            #check if node height changed and is not a leaf
+            #if not changed, then change will not be needed upwards
+            if after_update_height == old_height and after_update_height > 0:
+                promote -= 1 # do not count upward movements made earlier resulted in unchanged parent
+                return promote
+            
+            
+            
+            #if BF illegal, rotate 
+            did_rotation = False
+            if current_node.get_balance() < -1:
+                current_node = self.rotate_fully_left(current_node)
+                did_rotation = True
+                promote -= 1 # do not count upward movements made earlier resulted in rotations
+            elif current_node.get_balance() > 1:
+                current_node = self.rotate_fully_right(current_node)
+                did_rotation = True
+                promote -= 1  # do not count upward movements made earlier resulted in rotations
+                           
+            # after insert rotation returns the original height of subtree
+            # so rebalance can stop
+            #if node is root and balanced -> can stop rebalance
+            if did_rotation or current_node == self.root: 
+                return promote
+            
+            current_node = current_node.parent
+            promote += 1
+        return promote
+    
 
     def rebalance_tree(self, start_node: AVLNode):
         """go through all parents, balance and update heights"""
-        promote = 0
         current_node = start_node
         while current_node.is_real_node():
             current_node.update_height() #compute height from children
-            old = current_node.height    #save height before rotations
-   
+            
             while current_node.get_balance() < -1:
                 current_node = self.rotate_fully_left(current_node) #fix right heavy
-                
-                
             while current_node.get_balance() > 1:
                 current_node = self.rotate_fully_right(current_node) #fix left heavy
     
-            current_node.update_height() #recompute after rotations
-   
-            if current_node.height > old: #height increased -> promotion
-                promote += 1
             current_node = current_node.parent #move up tree
-   
-        return promote
+        return
     
         
     """joins self with item and another AVLTree
