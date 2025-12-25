@@ -502,9 +502,7 @@ class AVLTree(object):
             y.update_height()                 # updates height using children
             
             if y.height == old_h:
-                return promote               # pseudocode 3.2: height didn't change => stop
-            
-            promote += 1
+                return promote               # pseudocode 3.2: height didn't change => stop          
             
             bf = y.get_balance()             # pseudocode 3.1: compute BF(y)
 
@@ -515,8 +513,10 @@ class AVLTree(object):
             elif bf > 1:
                 y = self._rotate_fully_right(y)
                 return promote
+
+            promote += 1
                 
-            if y == self.root: 
+            if y == self.root:
                 return promote              # reached root, done
             
             y = y.parent                    # pseudocode 3.3: go up to parent
